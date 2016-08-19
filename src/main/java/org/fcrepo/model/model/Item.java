@@ -28,15 +28,26 @@ import lombok.ToString;
 public class Item extends Fedora {
 
     @Field(property = Property.DC_TITLE, dataType = DataType.XSD_STRING)
-    private List<String> title;
+    private List<String> dcTitle;
 
     @Field(property = Property.DC_CREATOR, dataType = DataType.XSD_STRING)
-    private List<String> creator;
+    private List<String> dcCreator;
 
     @Field(property = Property.DC_DESCRIPTION, dataType = DataType.XSD_STRING)
-    private List<String> description;
+    private List<String> dcDescription;
 
     @Field(property = Property.DC_DATE, dataType = DataType.XSD_DATE)
-    private List<String> date;
+    private List<String> dcDate;
 
+    @Field(property = Property.DCTERMS_TITLE, dataType = DataType.XSD_STRING)
+    private List<String> dctermsTitle;
+
+    @Field(property = Property.DCTERMS_CREATOR, dataType = DataType.XSD_STRING)
+    private List<String> dctermsCreator;
+
+    @Field(property = Property.DCTERMS_DESCRIPTION, dataType = DataType.XSD_STRING)
+    private List<String> dctermsDescription;
+
+    @Field(property = Property.DCTERMS_CREATED, dataType = DataType.XSD_STRING)
+    private List<String> dctermsCreated;
 }

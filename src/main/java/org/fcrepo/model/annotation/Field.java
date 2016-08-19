@@ -14,6 +14,7 @@ import org.fcrepo.model.vocabulary.FCREPO;
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.vocabulary.DC;
+import com.hp.hpl.jena.vocabulary.DCTerms;
 
 /**
  * The Property class.
@@ -28,7 +29,9 @@ public @interface Field {
 
         FEDORA_UUID(FCREPO.uuid), FEDORA_LAST_MODIFIED(FCREPO.lastModified), FEDORA_LAST_MODIFIED_BY(
             FCREPO.lastModifiedBy), FEDORA_CREATED_BY(FCREPO.createdBy), DC_TITLE(
-                DC.title), DC_CREATOR(DC.creator), DC_DESCRIPTION(DC.description), DC_DATE(DC.date);
+                DC.title), DC_CREATOR(DC.creator), DC_DESCRIPTION(DC.description), DC_DATE(DC.date), DCTERMS_TITLE(
+                    DCTerms.title), DCTERMS_CREATOR(
+                        DCTerms.creator), DCTERMS_DESCRIPTION(DCTerms.description), DCTERMS_CREATED(DCTerms.created);
 
         private com.hp.hpl.jena.rdf.model.Property property;
 

@@ -79,8 +79,8 @@ public class ModelManagerImplTest {
      */
     @Test
     public void testFind() throws ModelManagerException {
-        final ModelManager mm = mmf.createModelManager("fedoraAdmni", "fedoraAdmin");
-        final Item item = mm.find(Item.class, "http://localhost:8080/fedora/rest/test/8p/58/pc/92/8p58pc92q");
+        final ModelManager mm = mmf.createModelManager("fedoraAdmin", "fedoraAdmin");
+        final Item item = mm.find(Item.class, "http://localhost:8080/fedora/rest/dev/6w/92/4c/95/6w924c95q");
         out.println(item);
         assertNotNull(item);
         fail("Not yet implemented");

@@ -170,8 +170,8 @@ public class RdfModelTest {
         // @TODO create DAO Manager
 
         final Item item = new Item();
-        item.setTitle(Arrays.asList("title 1", "test fcrepo model annotation: @Model @Field..."));
-        item.setCreator(Arrays.asList("Sumrarn Pisaisansuk", "Piyapong Charoenwattana"));
+        item.setDcTitle(Arrays.asList("title 1", "test fcrepo model annotation: @Model @Field..."));
+        item.setDcCreator(Arrays.asList("Sumrarn Pisaisansuk", "Piyapong Charoenwattana"));
 
         // get lang and contentTypr from @Model
         final org.fcrepo.model.annotation.Model ma =
@@ -327,10 +327,10 @@ public class RdfModelTest {
         out.println(item2);
 
         // 4. update item data
-        item2.setCreator(Arrays.asList("Charoenwattana, Piyapong", "Pisaisansuk, Sumrarn"));
-        item2.setDate(Arrays.asList("2016-07-31"));
-        item2.setDescription(Arrays.asList("Item description...", "Update description..."));
-        item2.setTitle(Arrays.asList("Test transaction 2....", "title transaction..."));
+        item2.setDcCreator(Arrays.asList("Charoenwattana, Piyapong", "Pisaisansuk, Sumrarn"));
+        item2.setDcDate(Arrays.asList("2016-07-31"));
+        item2.setDcDescription(Arrays.asList("Item description...", "Update description..."));
+        item2.setDcTitle(Arrays.asList("Test transaction 2....", "title transaction..."));
 
         // 5. update item data model and create sqarql query
         final StringBuilder sb = new StringBuilder();
