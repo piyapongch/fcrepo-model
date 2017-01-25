@@ -27,11 +27,16 @@ public @interface Field {
 
     public enum Property {
 
+        // Fedora Properties
         FEDORA_UUID(FCREPO.uuid), FEDORA_LAST_MODIFIED(FCREPO.lastModified), FEDORA_LAST_MODIFIED_BY(
-            FCREPO.lastModifiedBy), FEDORA_CREATED_BY(FCREPO.createdBy), DC_TITLE(
-                DC.title), DC_CREATOR(DC.creator), DC_DESCRIPTION(DC.description), DC_DATE(DC.date), DCTERMS_TITLE(
-                    DCTerms.title), DCTERMS_CREATOR(
-                        DCTerms.creator), DCTERMS_DESCRIPTION(DCTerms.description), DCTERMS_CREATED(DCTerms.created);
+            FCREPO.lastModifiedBy), FEDORA_CREATED_BY(FCREPO.createdBy),
+
+        // DC Properties
+        DC_TITLE(DC.title), DC_CREATOR(DC.creator), DC_DESCRIPTION(DC.description), DC_DATE(DC.date),
+
+        // DCTerms Properties
+        DCTERMS_TITLE(DCTerms.title), DCTERMS_CREATOR(DCTerms.creator), DCTERMS_DESCRIPTION(
+            DCTerms.description), DCTERMS_CREATED(DCTerms.created);
 
         private com.hp.hpl.jena.rdf.model.Property property;
 

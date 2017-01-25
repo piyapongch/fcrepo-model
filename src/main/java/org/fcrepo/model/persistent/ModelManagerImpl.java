@@ -5,13 +5,14 @@
 
 package org.fcrepo.model.persistent;
 
+import java.io.ByteArrayInputStream;
 import java.lang.reflect.Field;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.StringJoiner;
 
+import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.fcrepo.client.FcrepoClient;
 import org.fcrepo.client.FcrepoResponse;
 import org.fcrepo.model.exception.ModelManagerException;
@@ -31,10 +32,6 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
  */
 public class ModelManagerImpl implements ModelManager {
 
-    private final String protocol;
-    private final String host;
-    private final int port;
-    private final String path;
     private final String url;
     private final String lang;
     private final String contentType;
@@ -45,16 +42,13 @@ public class ModelManagerImpl implements ModelManager {
      */
     public ModelManagerImpl(final String protocol, final String host, final int port, final String path,
         final String username, final String password) {
-        this.protocol = protocol;
-        this.host = host;
-        this.port = port;
-        this.path = path;
         this.url =
-            new StringJoiner("://", ":", "").add(protocol).add(host).add(Integer.toString(port)).add(path).toString();
-        final org.fcrepo.model.annotation.Model ma =
+            new StringBuilder().append(protocol).append("://").append(host).append(":").append(Integer.toString(port))
+                .append(path).toString();
+        final org.fcrepo.model.annotation.Model an =
             Fedora.class.getAnnotation(org.fcrepo.model.annotation.Model.class);
-        this.lang = ma.lang().getLang();
-        this.contentType = ma.contentType().getContentType();
+        this.lang = an.lang().getLang();
+        this.contentType = an.contentType().getContentType();
         client =
             FcrepoClient.client().authScope(host).credentials(username, password).throwExceptionOnFailure().build();
     }
@@ -96,26 +90,26 @@ public class ModelManagerImpl implements ModelManager {
     @Override
     public <T extends Fedora> T find(final Class<T> t, final String uri) throws ModelManagerException {
         try {
-            final T fm = t.newInstance();
+            final T fedora = t.newInstance();
             final FcrepoResponse resp = client.get(new URI(uri)).accept(contentType).perform();
-            final Model rm = ModelFactory.createDefaultModel();
-            rm.read(resp.getBody(), null, lang);
-            final Resource res = rm.getResource(uri);
-            final List<Field> fd = getInheritedFields(fm.getClass());
-            for (final Field f : fd) {
+            final Model model = ModelFactory.createDefaultModel();
+            model.read(resp.getBody(), null, lang);
+            final Resource res = model.getResource(uri);
+            final List<Field> fa = getInheritedFields(fedora.getClass());
+            for (final Field f : fa) {
                 f.setAccessible(true);
-                final org.fcrepo.model.annotation.Field fa = f.getAnnotation(org.fcrepo.model.annotation.Field.class);
-                if (res.hasProperty(fa.property().getProperty())) {
-                    final StmtIterator s = res.listProperties(fa.property().getProperty());
+                final org.fcrepo.model.annotation.Field an = f.getAnnotation(org.fcrepo.model.annotation.Field.class);
+                if (res.hasProperty(an.property().getProperty())) {
+                    final StmtIterator s = res.listProperties(an.property().getProperty());
                     final ArrayList<String> l = new ArrayList<String>();
                     while (s.hasNext()) {
                         final Statement sm = s.next();
                         l.add(sm.getString());
                     }
-                    f.set(fm, l);
+                    f.set(fedora, l);
                 }
             }
-            return fm;
+            return fedora;
         } catch (final Exception e) {
             throw new ModelManagerException(e);
         }
@@ -125,10 +119,31 @@ public class ModelManagerImpl implements ModelManager {
      *
      * @see org.fcrepo.model.persistent.ModelManager#save(org.fcrepo.model.model.Fedora)
      */
+    @SuppressWarnings("unchecked")
     @Override
-    public String save(final Fedora model) throws ModelManagerException {
-        // TODO: Implement this method.
-        return null;
+    public String save(final Fedora fedora) throws ModelManagerException {
+        try {
+            final Model model = ModelFactory.createDefaultModel();
+            final Resource res = model.getResource("");
+            final Field[] fa = fedora.getClass().getDeclaredFields();
+            for (final Field f : fa) {
+                f.setAccessible(true);
+                final org.fcrepo.model.annotation.Field an = f.getAnnotation(org.fcrepo.model.annotation.Field.class);
+                final List<String> l = (List<String>) f.get(fedora);
+                if (l != null) {
+                    for (final String s : l) {
+                        res.addProperty(an.property().getProperty(), s, an.dataType().getDatatype());
+                    }
+                }
+            }
+            final ByteArrayOutputStream bo = new ByteArrayOutputStream();
+            model.write(bo, lang);
+            final FcrepoResponse resp =
+                client.post(new URI(url)).body(new ByteArrayInputStream(bo.toByteArray()), contentType).perform();
+            return resp.getLocation().toString();
+        } catch (final Exception e) {
+            throw new ModelManagerException(e);
+        }
     }
 
     /**
