@@ -253,10 +253,12 @@ public class RdfModelTest {
     @Test
     public void testUpdate() throws Exception {
 
-        // get resource versions
+        // create new version
         final URI vUri = new URI(loc.toString() + "/fcr:versions");
         FcrepoResponse resp10 = null;
+        resp10 = fc.post(vUri).slug("v1.0.0").perform();
 
+        // get version
         resp10 = fc.get(vUri).accept(org.fcrepo.model.annotation.Model.ContentType.APPLICATION_RDFXML.getContentType())
             .perform();
         out.println(">> get versions status: " + resp10.getStatusCode());
@@ -284,7 +286,8 @@ public class RdfModelTest {
         resp10 = fc.post(txUri).perform();
         txUri = resp10.getLocation();
 
-        final URI uri = new URI(txUri.toString() + loc.getPath());
+        final String path = loc.getPath().substring("/fedora/rest".length());
+        final URI uri = new URI(txUri.toString() + path);
 
         // get lang and contentTypr from @Model
         final org.fcrepo.model.annotation.Model ma = Item.class.getAnnotation(org.fcrepo.model.annotation.Model.class);
