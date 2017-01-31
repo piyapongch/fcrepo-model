@@ -8,6 +8,8 @@ package org.fcrepo.model;
 import static java.lang.System.out;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.lang.reflect.Field;
 import java.net.URI;
@@ -16,9 +18,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.apache.jena.riot.RDFLanguages;
-import org.apache.tika.io.IOUtils;
 import org.fcrepo.client.FcrepoClient;
 import org.fcrepo.client.FcrepoResponse;
 import org.fcrepo.model.model.Item;
@@ -57,15 +59,11 @@ public class RdfModelTest {
     static String title = "An Introduction to RDF and the Jena API";
     static String date = "23/01/2001";
     private FcrepoClient fc;
+    private static URI loc;
 
-    // @Test
+    @Test
     public void testTurtle() throws Exception {
 
-        // some definitions
-        final String personURI = "http://somewhere/JohnSmith";
-        final String givenName = "John";
-        final String familyName = "Smith";
-        final String fullName = givenName + " " + familyName;
         // create an empty model
         Model model = ModelFactory.createDefaultModel();
 
@@ -84,9 +82,8 @@ public class RdfModelTest {
         model.write(bo, "TURTLE");
 
         // create fedora client
-        final FcrepoClient fc =
-            FcrepoClient.client().authScope("localhost").credentials("fedoraAdmin", "fedoraAdmin")
-                .throwExceptionOnFailure().build();
+        final FcrepoClient fc = FcrepoClient.client().authScope("localhost").credentials("fedoraAdmin", "fedoraAdmin")
+            .throwExceptionOnFailure().build();
 
         try {
 
@@ -106,10 +103,11 @@ public class RdfModelTest {
 
             out.println("------------ create new object /test ------------");
             final FcrepoResponse resp2 = fc.post(new URI("http://localhost:8080/fedora/rest/test")).perform();
+            loc = resp2.getLocation();
             out.println("post: " + resp2.getUrl());
             out.println("post: " + resp2.getStatusCode());
             out.println("post: " + resp2.getContentType());
-            out.println("post: " + resp2.getLocation());
+            out.println("post: " + loc);
 
             out.println("------------ get object and add properties ------------");
             FcrepoResponse resp3 = fc.get(resp2.getLocation()).perform();
@@ -131,13 +129,15 @@ public class RdfModelTest {
             out.println("put: " + resp3.getUrl());
             out.println("put: " + resp3.getStatusCode());
 
+            IOUtils.write(new String(bo.toByteArray()), new FileOutputStream(new File("target/sample.ttl")));
+
         } catch (final Exception e) {
             out.println(e);
         }
 
         // read file
         final Model model2 = ModelFactory.createDefaultModel();
-        final FileReader f = new FileReader("src/test/resources/test-data/sample.ttl");
+        final FileReader f = new FileReader("target/sample.ttl");
         model2.read(f, "", "TURTLE");
 
         System.out.println("----------- Statements -----------");
@@ -157,14 +157,13 @@ public class RdfModelTest {
 
     @Before
     public void setUp() {
-        fc =
-            FcrepoClient.client().authScope("localhost").credentials("fedoraAdmin", "fedoraAdmin")
-                .throwExceptionOnFailure().build();
+        fc = FcrepoClient.client().authScope("localhost").credentials("fedoraAdmin", "fedoraAdmin")
+            .throwExceptionOnFailure().build();
 
     }
 
     @SuppressWarnings("unchecked")
-    // @Test
+    @Test
     public void testModel() throws Exception {
 
         // @TODO create DAO Manager
@@ -231,7 +230,7 @@ public class RdfModelTest {
             final org.fcrepo.model.annotation.Field fa = f.getAnnotation(org.fcrepo.model.annotation.Field.class);
             if (r2.hasProperty(fa.property().getProperty())) {
                 final StmtIterator s = r2.listProperties(fa.property().getProperty());
-                final ArrayList<String> l = new ArrayList<String>();
+                final ArrayList<String> l = new ArrayList<>();
                 while (s.hasNext()) {
                     final Statement sm = s.next();
                     l.add(sm.getString());
@@ -243,10 +242,10 @@ public class RdfModelTest {
         out.println(item2);
     }
 
-    // @Test
+    @Test
     public void testDateFormat() throws Exception {
         // create new version using timestamp
-        out.println(ISODateTimeFormat.basicDateTime().print(new DateTime(DateTimeZone.UTC)));
+        out.println("dateFormat: " + ISODateTimeFormat.basicDateTime().print(new DateTime(DateTimeZone.UTC)));
 
     }
 
@@ -255,12 +254,11 @@ public class RdfModelTest {
     public void testUpdate() throws Exception {
 
         // get resource versions
-        final URI vUri = new URI("http://localhost:8080/fedora/rest/test/8p/58/pc/92/8p58pc92q/fcr:versions");
+        final URI vUri = new URI(loc.toString() + "/fcr:versions");
         FcrepoResponse resp10 = null;
 
-        resp10 =
-            fc.get(vUri).accept(org.fcrepo.model.annotation.Model.ContentType.APPLICATION_RDFXML.getContentType())
-                .perform();
+        resp10 = fc.get(vUri).accept(org.fcrepo.model.annotation.Model.ContentType.APPLICATION_RDFXML.getContentType())
+            .perform();
         out.println(">> get versions status: " + resp10.getStatusCode());
         resp10.getHeaders().entrySet().stream().forEach(out::println);
         final ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -268,10 +266,10 @@ public class RdfModelTest {
         out.println(">> versions:\n" + bos.toString());
 
         // list versions
-        final List<Version> vers = new ArrayList<Version>();
+        final List<Version> vers = new ArrayList<>();
         final Model model2 = ModelFactory.createDefaultModel();
         model2.read(new ByteArrayInputStream(bos.toByteArray()), null);
-        final Resource rs = model2.getResource("http://localhost:8080/fedora/rest/test/8p/58/pc/92/8p58pc92q");
+        final Resource rs = model2.getResource(loc.toString());
         final StmtIterator st = rs.listProperties();
         while (st.hasNext()) {
             final Statement s = st.next();
@@ -286,7 +284,7 @@ public class RdfModelTest {
         resp10 = fc.post(txUri).perform();
         txUri = resp10.getLocation();
 
-        final URI uri = new URI(txUri.toString() + "/test/8p/58/pc/92/8p58pc92q");
+        final URI uri = new URI(txUri.toString() + loc.getPath());
 
         // get lang and contentTypr from @Model
         final org.fcrepo.model.annotation.Model ma = Item.class.getAnnotation(org.fcrepo.model.annotation.Model.class);
@@ -315,7 +313,7 @@ public class RdfModelTest {
             if (fa.read() && r2.hasProperty(fa.property().getProperty())) {
                 f.setAccessible(true);
                 final StmtIterator s = r2.listProperties(fa.property().getProperty());
-                final ArrayList<String> l = new ArrayList<String>();
+                final ArrayList<String> l = new ArrayList<>();
                 while (s.hasNext()) {
                     final Statement sm = s.next();
                     l.add(sm.getString());
@@ -376,11 +374,12 @@ public class RdfModelTest {
 
     /**
      * The getInheritedFields method.
+     *
      * @param cl
      * @return
      */
     public static List<Field> getInheritedFields(final Class<?> cl) {
-        final List<Field> fields = new ArrayList<Field>();
+        final List<Field> fields = new ArrayList<>();
         for (Class<?> c = cl; c != null; c = c.getSuperclass()) {
             fields.addAll(Arrays.asList(c.getDeclaredFields()));
         }
