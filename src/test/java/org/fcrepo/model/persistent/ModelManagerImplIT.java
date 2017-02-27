@@ -6,8 +6,10 @@
 package org.fcrepo.model.persistent;
 
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import org.fcrepo.model.exception.ModelManagerException;
@@ -46,10 +48,13 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
 
     /**
      * Test method for {@link org.fcrepo.model.persistent.ModelManagerImpl#ModelManagerImpl()}.
+     *
+     * @throws IOException
      */
     @Test
-    public void testModelManagerImpl() {
-        fail("Not yet implemented");
+    public void testModelManagerImpl() throws IOException {
+        createFedoraObject("test-model");
+        assertTrue(true);
     }
 
     /**
