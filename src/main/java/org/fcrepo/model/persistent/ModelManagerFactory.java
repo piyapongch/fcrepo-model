@@ -25,6 +25,10 @@ public class ModelManagerFactory {
 
     private String path;
 
+    public ModelManager createModelManager() {
+        return createModelManager(null, null);
+    }
+
     public ModelManager createModelManager(final String username, final String password) {
         return new ModelManagerImpl(protocol, host, port, path, username, password);
     }

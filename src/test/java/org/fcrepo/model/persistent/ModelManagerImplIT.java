@@ -26,6 +26,7 @@ import org.junit.Test;
 public class ModelManagerImplIT extends AbstractFedoraModelIT {
 
     private ModelManagerFactory mmf;
+    private String itemUri;
 
     /**
      * The setUp method.
@@ -35,6 +36,10 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
     @Before
     public void setUp() throws Exception {
         mmf = new ModelManagerFactory("http", HOSTNAME, SERVER_PORT, "/");
+        final ModelManager mm = mmf.createModelManager("", "");
+        final Item item = new Item();
+        item.setDcTitle(Arrays.asList("Test Item for find method"));
+        itemUri = mm.save(item);
     }
 
     /**
@@ -53,7 +58,6 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
      */
     @Test
     public void testModelManagerImpl() throws IOException {
-        createFedoraObject("test-model");
         assertTrue(true);
     }
 
@@ -88,10 +92,8 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
      */
     @Test
     public void testFind() throws ModelManagerException {
-        final ModelManager mm = mmf.createModelManager("fedoraAdmin", "fedoraAdmin");
-        final Item item = mm.find(Item.class,
-            "http://localhost:8080/fedora/rest/test/fd/33/27/4c/fd33274c-b478-4612-a986-c003eca82fb9");
-        // "http://localhost:8080/fedora/rest/dev/6w/92/4c/95/6w924c95q"
+        final ModelManager mm = mmf.createModelManager();
+        final Item item = mm.find(Item.class, itemUri);
         logger.info(item.toString());
         assertNotNull(item);
     }
@@ -101,11 +103,11 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
      */
     @Test
     public void testSaveCreate() throws ModelManagerException {
-        final ModelManager mm = mmf.createModelManager("fedoraAdmin", "fedoraAdmin");
+        final ModelManager mm = mmf.createModelManager();
         final Item item = new Item();
-        item.setDcTitle(Arrays.asList("Test item"));
+        item.setDcTitle(Arrays.asList("Test Save or Crate Item"));
         final String uri = mm.save(item);
-        logger.info("uri: " + uri);
+        logger.info("item created: " + uri);
     }
 
     /**
