@@ -1,12 +1,43 @@
 /**
- * Piyapong Charoenwattana
- * Project: fcrepo-model
+ * Copyright 2015 DuraSpace, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
-
 package org.fcrepo.model.persistent;
 
+import static java.lang.Integer.MAX_VALUE;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static javax.ws.rs.core.Response.Status.CREATED;
+import static org.apache.http.impl.client.HttpClientBuilder.create;
+import static org.junit.Assert.assertEquals;
 import static org.slf4j.LoggerFactory.getLogger;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+
+import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -14,9 +45,11 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 /**
- * The AbstractFedoraModelIT class.
+ * <p>
+ * Abstract AbstractResourceIT class.
+ * </p>
  *
- * @author <a href="mailto:piyapongch@gmail.com">Piyapong Charoenwattana</a>
+ * @author fasseg
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration("/spring-test/test-container.xml")
@@ -24,27 +57,94 @@ public abstract class AbstractFedoraModelIT {
 
     protected Logger logger;
 
-    protected ModelManagerFactory mmf;
-
     @Before
     public void setLogger() {
         logger = getLogger(this.getClass());
     }
 
-    /**
-     * The setUp method.
-     * @throws java.lang.Exception
-     */
-    @Before
-    public void setUp() throws Exception {
-        mmf = new ModelManagerFactory("http", "localhost", 8080, "/fedora/rest/test");
+    protected static final int SERVER_PORT = Integer.parseInt(System.getProperty("fcrepo.dynamic.test.port", "8080"));
+
+    protected static final String HOSTNAME = "localhost";
+
+    protected static final String serverAddress = "http://" + HOSTNAME + ":" + SERVER_PORT + "/";
+
+    protected final PoolingHttpClientConnectionManager connectionManager = new PoolingHttpClientConnectionManager();
+
+    protected static HttpClient client;
+
+    protected Unmarshaller unmarshaller;
+
+    protected Marshaller marshaller;
+
+    public AbstractFedoraModelIT() {
+        connectionManager.setMaxTotal(MAX_VALUE);
+        connectionManager.setDefaultMaxPerRoute(5);
+        connectionManager.closeIdleConnections(3, SECONDS);
+        client = create().setConnectionManager(connectionManager).build();
     }
 
-    /**
-     * The AbstractFedoraModelIT class constructor.
-     */
-    public AbstractFedoraModelIT() {
-        // TODO: Implement this constructor.
+    protected static HttpPost postObjMethod(final String pid) {
+        return new HttpPost(serverAddress + pid);
+    }
+
+    protected HttpResponse createDatastream(final String pid, final String dsid, final String content)
+        throws IOException {
+        logger.trace("Attempting to create datastream for object: {} at datastream ID: {}", pid, dsid);
+        final HttpResponse response = client.execute(putDSMethod(pid, dsid, content));
+        assertEquals(CREATED.getStatusCode(), response.getStatusLine().getStatusCode());
+        return response;
+    }
+
+    protected static HttpPut putDSMethod(final String pid, final String ds, final String content)
+        throws UnsupportedEncodingException {
+        final HttpPut put = new HttpPut(serverAddress + pid + "/" + ds);
+
+        put.setEntity(new StringEntity(content));
+        return put;
+    }
+
+    protected int getStatus(final HttpUriRequest method) throws ClientProtocolException, IOException {
+        logger.debug("Executing: " + method.getMethod() + " to " + method.getURI());
+        return client.execute(method).getStatusLine().getStatusCode();
+    }
+
+    protected void createFedoraObject(final String pid, final String set) throws IOException {
+        final HttpPost post = postObjMethod("/");
+        if (pid.length() > 0) {
+            post.addHeader("Slug", pid);
+            final StringBuilder sparql = new StringBuilder("INSERT {").append("<> ")
+                .append("<info:fedora/fedora-system:def/model#hasModel> \"GenericFile\"");
+            if (set != null && !set.isEmpty()) {
+                sparql.append("; ").append("<http://fedora.info/definitions/v4/config#isPartOfOAISet> ").append("\"")
+                    .append(set).append("\"");
+            }
+            sparql.append(".} WHERE {}");
+            post.setEntity(new StringEntity(sparql.toString()));
+            post.addHeader("Content-Type", "application/sparql-update");
+        } else if (set != null && !set.isEmpty()) {
+            final StringBuilder sparql = new StringBuilder("INSERT {").append("<> ")
+                .append("<http://fedora.info/definitions/v4/config#isPartOfOAISet> ").append("\"").append(set)
+                .append("\" .").append("} WHERE {}");
+            post.setEntity(new StringEntity(sparql.toString()));
+            post.addHeader("Content-Type", "application/sparql-update");
+        } else {
+        }
+
+        final HttpResponse response = client.execute(post);
+        assertEquals(CREATED.getStatusCode(), response.getStatusLine().getStatusCode());
+        post.releaseConnection();
+    }
+
+    protected void createFedoraObject(final String pid) throws IOException {
+        this.createFedoraObject(pid, null);
+    }
+
+    protected void createBinaryObject(final String binaryId, final InputStream src) throws IOException {
+        final HttpPut put = new HttpPut(serverAddress + "/" + binaryId);
+        put.setEntity(new StringEntity(IOUtils.toString(src)));
+        final HttpResponse resp = this.client.execute(put);
+        assertEquals(201, resp.getStatusLine().getStatusCode());
+        put.releaseConnection();
     }
 
 }

@@ -27,16 +27,17 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
 
     /**
      * The setUp method.
+     *
      * @throws java.lang.Exception
      */
-    @Override
     @Before
     public void setUp() throws Exception {
-        mmf = new ModelManagerFactory("http", "localhost", 8080, "/fedora/rest/test");
+        mmf = new ModelManagerFactory("http", HOSTNAME, SERVER_PORT, "/");
     }
 
     /**
      * The tearDown method.
+     *
      * @throws java.lang.Exception
      */
     @After
@@ -77,14 +78,14 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
 
     /**
      * Test method for {@link org.fcrepo.model.persistent.ModelManagerImpl#find(java.lang.Class, java.lang.String)}.
+     *
      * @throws ModelManagerException
      */
     @Test
     public void testFind() throws ModelManagerException {
         final ModelManager mm = mmf.createModelManager("fedoraAdmin", "fedoraAdmin");
-        final Item item =
-            mm.find(Item.class,
-                "http://localhost:8080/fedora/rest/test/fd/33/27/4c/fd33274c-b478-4612-a986-c003eca82fb9");
+        final Item item = mm.find(Item.class,
+            "http://localhost:8080/fedora/rest/test/fd/33/27/4c/fd33274c-b478-4612-a986-c003eca82fb9");
         // "http://localhost:8080/fedora/rest/dev/6w/92/4c/95/6w924c95q"
         logger.info(item.toString());
         assertNotNull(item);
