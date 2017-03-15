@@ -42,9 +42,8 @@ public class ModelManagerImpl implements ModelManager {
      */
     public ModelManagerImpl(final String protocol, final String host, final int port, final String path,
         final String username, final String password) {
-        this.url =
-            new StringBuilder().append(protocol).append("://").append(host).append(":").append(Integer.toString(port))
-                .append(path).toString();
+        this.url = new StringBuilder().append(protocol).append("://").append(host).append(":")
+            .append(Integer.toString(port)).append(path).toString();
         final org.fcrepo.model.annotation.Model an =
             Fedora.class.getAnnotation(org.fcrepo.model.annotation.Model.class);
         this.lang = an.lang().getLang();
@@ -101,7 +100,7 @@ public class ModelManagerImpl implements ModelManager {
                 final org.fcrepo.model.annotation.Field an = f.getAnnotation(org.fcrepo.model.annotation.Field.class);
                 if (res.hasProperty(an.property().getProperty())) {
                     final StmtIterator s = res.listProperties(an.property().getProperty());
-                    final ArrayList<String> l = new ArrayList<String>();
+                    final ArrayList<String> l = new ArrayList<>();
                     while (s.hasNext()) {
                         final Statement sm = s.next();
                         l.add(sm.getString());
@@ -116,12 +115,13 @@ public class ModelManagerImpl implements ModelManager {
     }
 
     /**
+     * {@inheritDoc}
      *
-     * @see org.fcrepo.model.persistent.ModelManager#save(org.fcrepo.model.model.Fedora)
+     * @see org.fcrepo.model.persistent.ModelManager#save(java.lang.String, org.fcrepo.model.model.Fedora)
      */
     @SuppressWarnings("unchecked")
     @Override
-    public String save(final Fedora fedora) throws ModelManagerException {
+    public String save(final String path, final Fedora fedora, final String name) throws ModelManagerException {
         try {
             final Model model = ModelFactory.createDefaultModel();
             final Resource res = model.getResource("");
@@ -138,8 +138,8 @@ public class ModelManagerImpl implements ModelManager {
             }
             final ByteArrayOutputStream bo = new ByteArrayOutputStream();
             model.write(bo, lang);
-            final FcrepoResponse resp =
-                client.post(new URI(url)).body(new ByteArrayInputStream(bo.toByteArray()), contentType).perform();
+            final FcrepoResponse resp = client.post(new URI(url + path))
+                .body(new ByteArrayInputStream(bo.toByteArray()), contentType).slug(name).perform();
             return resp.getLocation().toString();
         } catch (final Exception e) {
             throw new ModelManagerException(e);
@@ -198,14 +198,16 @@ public class ModelManagerImpl implements ModelManager {
 
     /**
      * The getInheritedFields method.
+     *
      * @param cl
      * @return
      */
     private static List<Field> getInheritedFields(final Class<?> cl) {
-        final List<Field> fields = new ArrayList<Field>();
+        final List<Field> fields = new ArrayList<>();
         for (Class<?> c = cl; c != null; c = c.getSuperclass()) {
             fields.addAll(Arrays.asList(c.getDeclaredFields()));
         }
         return fields;
     }
+
 }

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import org.fcrepo.model.exception.ModelManagerException;
+import org.fcrepo.model.model.Fedora;
 import org.fcrepo.model.model.Item;
 import org.junit.After;
 import org.junit.Before;
@@ -27,6 +28,7 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
 
     private ModelManagerFactory mmf;
     private String itemUri;
+    private static String path = "/dev";
 
     /**
      * The setUp method.
@@ -34,12 +36,24 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
      * @throws java.lang.Exception
      */
     @Before
-    public void setUp() throws Exception {
-        mmf = new ModelManagerFactory("http", HOSTNAME, SERVER_PORT, "/");
-        final ModelManager mm = mmf.createModelManager("", "");
-        final Item item = new Item();
-        item.setDcTitle(Arrays.asList("Test Item for find method"));
-        itemUri = mm.save(item);
+    public void setup() throws Exception {
+
+        mmf = new ModelManagerFactory("http", HOSTNAME, SERVER_PORT, "");
+        final ModelManager mm = mmf.createModelManager(null, null);
+        Fedora fm = null;
+        try {
+            fm = mm.find(Fedora.class, "http://localhost:8080/dev");
+        } catch (final Exception e) {
+
+            // create container
+            fm = new Fedora();
+            mm.save("/", fm, "dev");
+        }
+
+        // create item
+        final Item im = new Item();
+        im.setDcTitle(Arrays.asList("Test Item for find method"));
+        itemUri = mm.save(path, im, "");
     }
 
     /**
@@ -106,7 +120,7 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
         final ModelManager mm = mmf.createModelManager();
         final Item item = new Item();
         item.setDcTitle(Arrays.asList("Test Save or Crate Item"));
-        final String uri = mm.save(item);
+        final String uri = mm.save(path, item, "");
         logger.info("item created: " + uri);
     }
 
