@@ -26,7 +26,7 @@ public interface ModelManager {
 
     public <T extends Fedora> T find(Class<T> t, String uri) throws ModelManagerException;
 
-    public String save(String path, Fedora model, String name) throws ModelManagerException;
+    public String save(Fedora model, String path, String name) throws ModelManagerException;
 
     public void delete(String uri) throws ModelManagerException;
 

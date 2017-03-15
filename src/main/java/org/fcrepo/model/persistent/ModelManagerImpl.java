@@ -13,7 +13,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.apache.http.HttpStatus;
 import org.fcrepo.client.FcrepoClient;
+import org.fcrepo.client.FcrepoOperationFailedException;
 import org.fcrepo.client.FcrepoResponse;
 import org.fcrepo.model.exception.ModelManagerException;
 import org.fcrepo.model.model.Fedora;
@@ -98,17 +100,24 @@ public class ModelManagerImpl implements ModelManager {
             for (final Field f : fa) {
                 f.setAccessible(true);
                 final org.fcrepo.model.annotation.Field an = f.getAnnotation(org.fcrepo.model.annotation.Field.class);
-                if (res.hasProperty(an.property().getProperty())) {
-                    final StmtIterator s = res.listProperties(an.property().getProperty());
-                    final ArrayList<String> l = new ArrayList<>();
-                    while (s.hasNext()) {
-                        final Statement sm = s.next();
-                        l.add(sm.getString());
+                if (an.read()) {
+                    if (res.hasProperty(an.property().getProperty())) {
+                        final StmtIterator s = res.listProperties(an.property().getProperty());
+                        final ArrayList<String> l = new ArrayList<>();
+                        while (s.hasNext()) {
+                            final Statement sm = s.next();
+                            l.add(sm.getString());
+                        }
+                        f.set(fedora, l);
                     }
-                    f.set(fedora, l);
                 }
             }
             return fedora;
+        } catch (final FcrepoOperationFailedException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return null;
+            }
+            throw new ModelManagerException(e);
         } catch (final Exception e) {
             throw new ModelManagerException(e);
         }
@@ -121,7 +130,7 @@ public class ModelManagerImpl implements ModelManager {
      */
     @SuppressWarnings("unchecked")
     @Override
-    public String save(final String path, final Fedora fedora, final String name) throws ModelManagerException {
+    public String save(final Fedora fedora, final String path, final String name) throws ModelManagerException {
         try {
             final Model model = ModelFactory.createDefaultModel();
             final Resource res = model.getResource("");
@@ -129,10 +138,12 @@ public class ModelManagerImpl implements ModelManager {
             for (final Field f : fa) {
                 f.setAccessible(true);
                 final org.fcrepo.model.annotation.Field an = f.getAnnotation(org.fcrepo.model.annotation.Field.class);
-                final List<String> l = (List<String>) f.get(fedora);
-                if (l != null) {
-                    for (final String s : l) {
-                        res.addProperty(an.property().getProperty(), s, an.dataType().getDatatype());
+                if (an.write()) { // field has write permission
+                    final List<String> l = (List<String>) f.get(fedora);
+                    if (l != null) {
+                        for (final String s : l) {
+                            res.addProperty(an.property().getProperty(), s, an.dataType().getDatatype());
+                        }
                     }
                 }
             }

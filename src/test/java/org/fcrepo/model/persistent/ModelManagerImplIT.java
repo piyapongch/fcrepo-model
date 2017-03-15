@@ -27,7 +27,6 @@ import org.junit.Test;
 public class ModelManagerImplIT extends AbstractFedoraModelIT {
 
     private ModelManagerFactory mmf;
-    private String itemUri;
     private static String path = "/dev";
 
     /**
@@ -40,20 +39,13 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
 
         mmf = new ModelManagerFactory("http", HOSTNAME, SERVER_PORT, "");
         final ModelManager mm = mmf.createModelManager(null, null);
-        Fedora fm = null;
-        try {
-            fm = mm.find(Fedora.class, "http://localhost:8080/dev");
-        } catch (final Exception e) {
+        Fedora fm = mm.find(Fedora.class, "http://localhost:8080/dev");
 
-            // create container
+        // create container
+        if (fm == null) {
             fm = new Fedora();
-            mm.save("/", fm, "dev");
+            mm.save(fm, "/", "dev");
         }
-
-        // create item
-        final Item im = new Item();
-        im.setDcTitle(Arrays.asList("Test Item for find method"));
-        itemUri = mm.save(path, im, "");
     }
 
     /**
@@ -106,9 +98,15 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
      */
     @Test
     public void testFind() throws ModelManagerException {
+
+        // create test item
         final ModelManager mm = mmf.createModelManager();
+        final Item im = new Item();
+        im.setDcTitle(Arrays.asList("Test Item for find() and save()"));
+        final String itemUri = mm.save(im, path, "");
+
         final Item item = mm.find(Item.class, itemUri);
-        logger.info(item.toString());
+        logger.info("found item: " + item.toString());
         assertNotNull(item);
     }
 
@@ -120,7 +118,7 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
         final ModelManager mm = mmf.createModelManager();
         final Item item = new Item();
         item.setDcTitle(Arrays.asList("Test Save or Crate Item"));
-        final String uri = mm.save(path, item, "");
+        final String uri = mm.save(item, path, "");
         logger.info("item created: " + uri);
     }
 
