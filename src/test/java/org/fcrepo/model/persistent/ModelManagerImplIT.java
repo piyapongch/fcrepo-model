@@ -103,6 +103,7 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
         final ModelManager mm = mmf.createModelManager();
         final Item im = new Item();
         im.setDcTitle(Arrays.asList("Test Item for find() and save()"));
+        im.setType(Arrays.asList("http://www.w3.org/ns/ldp#IndirectContainer"));
         final String itemUri = mm.save(im, path, "");
 
         final Item item = mm.find(Item.class, itemUri);
@@ -118,6 +119,7 @@ public class ModelManagerImplIT extends AbstractFedoraModelIT {
         final ModelManager mm = mmf.createModelManager();
         final Item item = new Item();
         item.setDcTitle(Arrays.asList("Test Save or Crate Item"));
+        item.setType(Arrays.asList("http://example.org/test"));
         final String uri = mm.save(item, path, "");
         logger.info("item created: " + uri);
     }

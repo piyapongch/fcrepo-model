@@ -17,15 +17,19 @@ import org.apache.http.HttpStatus;
 import org.fcrepo.client.FcrepoClient;
 import org.fcrepo.client.FcrepoOperationFailedException;
 import org.fcrepo.client.FcrepoResponse;
+import org.fcrepo.model.annotation.Field.DataType;
 import org.fcrepo.model.exception.ModelManagerException;
 import org.fcrepo.model.model.Fedora;
 import org.fcrepo.model.model.Version;
 
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
+import com.hp.hpl.jena.rdf.model.impl.ResourceImpl;
+import com.hp.hpl.jena.vocabulary.RDF;
 
 /**
  * The ModelManagerImpl class.
@@ -106,7 +110,12 @@ public class ModelManagerImpl implements ModelManager {
                         final ArrayList<String> l = new ArrayList<>();
                         while (s.hasNext()) {
                             final Statement sm = s.next();
-                            l.add(sm.getString());
+                            final RDFNode o = sm.getObject();
+                            if (o.isURIResource()) {
+                                l.add(o.asResource().getURI());
+                            } else {
+                                l.add(o.asLiteral().getString());
+                            }
                         }
                         f.set(fedora, l);
                     }
@@ -142,7 +151,11 @@ public class ModelManagerImpl implements ModelManager {
                     final List<String> l = (List<String>) f.get(fedora);
                     if (l != null) {
                         for (final String s : l) {
-                            res.addProperty(an.property().getProperty(), s, an.dataType().getDatatype());
+                            if (an.dataType().equals(DataType.XSD_URI)) {
+                                res.addProperty(RDF.type, new ResourceImpl(s));
+                            } else {
+                                res.addProperty(an.property().getProperty(), s, an.dataType().getDatatype());
+                            }
                         }
                     }
                 }

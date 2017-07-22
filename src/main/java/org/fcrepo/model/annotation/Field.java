@@ -15,6 +15,7 @@ import org.fcrepo.model.vocabulary.FCREPO;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.vocabulary.DC;
 import com.hp.hpl.jena.vocabulary.DCTerms;
+import com.hp.hpl.jena.vocabulary.RDF;
 
 /**
  * The Property class.
@@ -30,6 +31,9 @@ public @interface Field {
         // Fedora Properties
         FEDORA_UUID(FCREPO.uuid), FEDORA_LAST_MODIFIED(FCREPO.lastModified), FEDORA_LAST_MODIFIED_BY(
             FCREPO.lastModifiedBy), FEDORA_CREATED_BY(FCREPO.createdBy),
+
+        // RDF Properties
+        RDF_TYPE(RDF.type),
 
         // DC Properties
         DC_TITLE(DC.title), DC_CREATOR(DC.creator), DC_DESCRIPTION(DC.description), DC_DATE(DC.date),
@@ -51,7 +55,7 @@ public @interface Field {
 
     public enum DataType {
         NULL(null), XSD_STRING(XSDDatatype.XSDstring), XSD_DATE(XSDDatatype.XSDdate), XSD_DATETIME(
-            XSDDatatype.XSDdateTime);
+            XSDDatatype.XSDdateTime), XSD_URI(XSDDatatype.XSDanyURI);
 
         private XSDDatatype dataType;
 
@@ -66,9 +70,13 @@ public @interface Field {
 
     Property property();
 
-    DataType dataType() default DataType.NULL;
+    DataType dataType()
 
-    boolean read() default true;
+    default DataType.NULL;
+
+    boolean read()
+
+    default true;
 
     boolean write() default true;
 }

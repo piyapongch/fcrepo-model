@@ -13,6 +13,7 @@ import org.fcrepo.model.annotation.Field.Property;
 import org.fcrepo.model.annotation.Model;
 
 import lombok.Getter;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -40,4 +41,8 @@ public class Fedora {
     @Field(property = Property.FEDORA_LAST_MODIFIED, dataType = DataType.XSD_DATETIME, write = false)
     private List<String> lastModified;
 
+    @Getter
+    @Setter
+    @Field(property = Property.RDF_TYPE, dataType = DataType.XSD_URI, write = true)
+    private List<String> type;
 }
